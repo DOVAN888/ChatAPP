@@ -1,0 +1,48 @@
+User {
+  id string pk
+  username string unique [required]
+  hashedPassword string [required]
+  displayName string [required]
+  email string unique
+  avatarUrl string
+  avatarId string
+  bio string
+  phone string
+  createdAt datetime
+  updatedAt datetime
+}
+
+Conversation {
+  id string pk
+  participants User [ref, required] // thường là mảng, diagram tool sẽ hiểu “nhiều”
+  type enum('direct','group') [required]
+  createdAt datetime
+  updatedAt datetime
+}
+
+Message {
+  id string pk
+  senderId User [ref, required]
+  conversationId Conversation [ref, required]
+  content string
+  imgUrl string
+  createdAt datetime
+  updatedAt datetime
+}
+
+FriendRequest {
+  id string pk
+  from User [ref, required]
+  to User [ref, required]
+  message string
+  createdAt datetime
+  updatedAt datetime
+}
+
+Friend {
+  id string pk
+  userA User [ref, required]
+  userB User [ref, required]
+  createdAt datetime
+  updatedAt datetime
+}
