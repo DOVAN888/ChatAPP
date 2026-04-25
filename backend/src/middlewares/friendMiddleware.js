@@ -1,12 +1,13 @@
 import Conversation from "../models/Conversation.js";
 import Friend from "../models/Friend.js";
 
-const pair = (a, b) => (a < b ? [a, b] : [b, a]);
+const pair = (a, b) => (a < b ? [a, b] : [b, a]);// dong nay de sap xep hai id de de so sanh 
 
+// middleware kiem tra tinh ban be giua nguoi dung hien tai neu chua la ban be thi ko the gui tin 
 export const checkFriendship = async (req, res, next) => {
   try {
     const me = req.user._id.toString();
-    const recipientId = req.body?.recipientId ?? null;
+    const recipientId = req.body?.recipientId ?? null;// dong nay de lay recipientId la id nguoi nhan 
     const memberIds = req.body?.memberIds ?? [];
 
     if (!recipientId && memberIds.length === 0) {

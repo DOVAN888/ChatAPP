@@ -47,7 +47,7 @@ export function SigninForm({ className, ...props }: React.ComponentProps<"div">)
 
                 <h1 className="text-2xl font-bold">お帰りなさい</h1>
                 <p className="text-muted-foreground text-balance">
-                  Mojiアカウントにログインしてください
+                  Chatアカウントにログインしてください
                 </p>
               </div>
 

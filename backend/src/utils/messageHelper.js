@@ -1,3 +1,5 @@
+// ham nay de cap nhat hoi thoai sau khi tao tao tin nhan moi de dung chung cho cac controller va socket.io 
+
 export const updateConversationAfterCreateMessage = (
   conversation,
   message,
@@ -14,6 +16,7 @@ export const updateConversationAfterCreateMessage = (
     },
   });
 
+  // cap nhat so tin nhan chua doc cho tung thanh vien trong cuoc tro chuyen
   conversation.participants.forEach((p) => {
     const memberId = p.userId.toString();
     const isSender = memberId === senderId.toString();
@@ -22,6 +25,7 @@ export const updateConversationAfterCreateMessage = (
   });
 };
 
+// ham nay de phat su kien tin nnhan moi qua socket.io 
 export const emitNewMessage = (io, conversation, message) => {
   io.to(conversation._id.toString()).emit("new-message", {
     message,

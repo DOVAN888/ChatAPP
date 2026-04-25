@@ -11,7 +11,7 @@ const ChatWelcomeScreen = () => {
             <span className="text-3xl">💬</span>
           </div>
           <h2 className="text-2xl font-bold mb-2 bg-gradient-chat bg-clip-text text-transparent">
-            Mojiへようこそ！
+            Chatへようこそ！
           </h2>
           <p className="text-muted-foreground">
             会話を選択してチャットを開始しましょう！

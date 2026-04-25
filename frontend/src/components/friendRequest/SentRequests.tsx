@@ -7,7 +7,7 @@ const SentRequests = () => {
   if (!sentList || sentList.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
-        Bạn chưa gửi lời mời kết bạn nào.
+        送信した友達申請はありません。
       </p>
     );
   }
@@ -21,7 +21,7 @@ const SentRequests = () => {
             requestInfo={req}
             type="sent"
             actions={
-              <p className="text-muted-foreground text-sm">Đang chờ trả lời...</p>
+              <p className="text-muted-foreground text-sm">返信を待っています...</p>
             }
           />
         ))}

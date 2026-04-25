@@ -2,9 +2,11 @@ import Friend from "../models/Friend.js";
 import User from "../models/User.js";
 import FriendRequest from "../models/FriendRequest.js";
 
+
+// ham gui loi moi ket ban
 export const sendFriendRequest = async (req, res) => {
   try {
-    const { to, message } = req.body;
+    const { to, message } = req.body;// cai nay la lay tu nguoi dung nhap vao 
 
     const from = req.user._id;
 
@@ -20,18 +22,19 @@ export const sendFriendRequest = async (req, res) => {
       return res.status(404).json({ message: "Người dùng không tồn tại" });
     }
 
-    let userA = from.toString();
+    let userA = from.toString();// chuyen ham sang string de de so sanh
     let userB = to.toString();
 
     if (userA > userB) {
-      [userA, userB] = [userB, userA];
+      [userA, userB] = [userB, userA]; // hai ham nay doi cho nhau de de so sanh
     }
 
+    //promise de chay dongthoi ca hai truy van vi cai mot khong phai doi cai hai
     const [alreadyFriends, existingRequest] = await Promise.all([
       Friend.findOne({ userA, userB }),
       FriendRequest.findOne({
         $or: [
-          { from, to },
+          { from, to },//{ from, to } là viết tắt của { from: from, to: to }
           { from: to, to: from },
         ],
       }),
@@ -60,30 +63,34 @@ export const sendFriendRequest = async (req, res) => {
   }
 };
 
+// ham chap nhan loi moi ket ban
+
 export const acceptFriendRequest = async (req, res) => {
   try {
     const { requestId } = req.params;
     const userId = req.user._id;
 
-    const request = await FriendRequest.findById(requestId);
+    const request = await FriendRequest.findById(requestId);// cai request id nay la  lay tu param de so sanh voi database
 
     if (!request) {
       return res.status(404).json({ message: "Không tìm thấy lời mời kết bạn" });
     }
-
+//neu nguoi nhan loi moi ket ban ma khac voi nguoi dang nhap thi khong co quen dong y
     if (request.to.toString() !== userId.toString()) {
       return res
         .status(403)
         .json({ message: "Bạn không có quyền chấp nhận lời mời này" });
     }
-
+// dong nay de tao ban be moi 
     const friend = await Friend.create({
       userA: request.from,
       userB: request.to,
     });
 
+    // xoa loi moi ket ban sau khi da chap nhan
     await FriendRequest.findByIdAndDelete(requestId);
 
+    //lay thong tin nguoi gui de tra ve cho nguoi nhan biet
     const from = await User.findById(request.from)
       .select("_id displayName avatarUrl")
       .lean();
@@ -102,6 +109,7 @@ export const acceptFriendRequest = async (req, res) => {
   }
 };
 
+// ham tu choi loi moi ket ban 
 export const declineFriendRequest = async (req, res) => {
   try {
     const { requestId } = req.params;
@@ -128,6 +136,7 @@ export const declineFriendRequest = async (req, res) => {
   }
 };
 
+// ham lay dnah sach ban be 
 export const getAllFriends = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -142,9 +151,9 @@ export const getAllFriends = async (req, res) => {
         },
       ],
     })
-      .populate("userA", "_id displayName avatarUrl username")
+      .populate("userA", "_id displayName avatarUrl username") // populate la de lay thong tin nguoi dung
       .populate("userB", "_id displayName avatarUrl username")
-      .lean();
+      .lean(); //lean de tra ve di tuong thuong thay vi mongoose DB object
 
     if (!friendships.length) {
       return res.status(200).json({ friends: [] });
@@ -161,6 +170,7 @@ export const getAllFriends = async (req, res) => {
   }
 };
 
+// ham lay danh sach loi moi ket ban va nguoi gui
 export const getFriendRequests = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -172,6 +182,9 @@ export const getFriendRequests = async (req, res) => {
       FriendRequest.find({ to: userId }).populate("from", populateFields),
     ]);
 
+    //sent: danh sách bạn gửi
+
+//received: danh sách bạn nhận
     res.status(200).json({ sent, received });
   } catch (error) {
     console.error("Lỗi khi lấy danh sách yêu cầu kết bạn", error);

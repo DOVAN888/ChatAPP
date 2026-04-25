@@ -6,6 +6,8 @@ import {
 } from "../utils/messageHelper.js";
 import { io } from "../socket/index.js";
 
+
+// ham nay de gui tin nhan truc tiep giua hai nguoi dung
 export const sendDirectMessage = async (req, res) => {
   try {
     const { recipientId, content, conversationId } = req.body;
@@ -21,6 +23,7 @@ export const sendDirectMessage = async (req, res) => {
       conversation = await Conversation.findById(conversationId);
     }
 
+    // neu khong co cuoc hoi thoai thi tao moi 
     if (!conversation) {
       conversation = await Conversation.create({
         type: "direct",
@@ -29,20 +32,23 @@ export const sendDirectMessage = async (req, res) => {
           { userId: recipientId, joinedAt: new Date() },
         ],
         lastMessageAt: new Date(),
-        unreadCounts: new Map(),
+        unreadCounts: new Map(), //khoi tao mot ban do de dem so tin nhan chua doc
       });
     }
 
+    // tao tin nhan moi 
     const message = await Message.create({
       conversationId: conversation._id,
       senderId,
       content,
     });
 
+    //cap nhat hoi thao isau khi tao tin nhan tu socket.io
     updateConversationAfterCreateMessage(conversation, message, senderId);
 
     await conversation.save();
 
+    //phat su kien tin nhan moi qua socket.io
     emitNewMessage(io, conversation, message);
 
     return res.status(201).json({ message });
@@ -52,6 +58,7 @@ export const sendDirectMessage = async (req, res) => {
   }
 };
 
+// // ham nay de gui tin nhan trong nhom
 export const sendGroupMessage = async (req, res) => {
   try {
     const { conversationId, content } = req.body;
