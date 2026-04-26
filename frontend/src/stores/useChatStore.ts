@@ -150,13 +150,17 @@ export const useChatStore = create<ChatState>()(
           console.error("Lỗi xảy khi ra add message:", error);
         }
       },
-      updateConversation: (conversation) => {
-        set((state) => ({
-          conversations: state.conversations.map((c) =>
-            c._id === conversation._id ? { ...c, ...conversation } : c
-          ),
-        }));
-      },
+   updateConversation: (conversation) => {
+  const updatedConversation = conversation as ChatState["conversations"][number];
+
+  set((state) => ({
+    conversations: state.conversations.map((c) =>
+      c._id === updatedConversation._id
+        ? { ...c, ...updatedConversation }
+        : c
+    ),
+  }));
+},
       markAsSeen: async () => {
         try {
           const { user } = useAuthStore.getState();
