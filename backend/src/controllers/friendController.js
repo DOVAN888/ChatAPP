@@ -1,102 +1,100 @@
 import Friend from "../models/Friend.js";
 import User from "../models/User.js";
 import FriendRequest from "../models/FriendRequest.js";
+import { io } from "../socket/index.js";
 
-
-// ham gui loi moi ket ban
 export const sendFriendRequest = async (req, res) => {
   try {
-    const { to, message } = req.body;// cai nay la lay tu nguoi dung nhap vao 
-
+    const { to, message } = req.body;
     const from = req.user._id;
 
     if (from === to) {
       return res
         .status(400)
-        .json({ message: "Không thể gửi lời mời kết bạn cho chính mình" });
+        .json({ message: "自分自身にフレンドリクエストを送ることはできません" });
     }
 
     const userExists = await User.exists({ _id: to });
 
     if (!userExists) {
-      return res.status(404).json({ message: "Người dùng không tồn tại" });
+      return res.status(404).json({ message: "このユーザーは存在しません" });
     }
 
-    let userA = from.toString();// chuyen ham sang string de de so sanh
+    let userA = from.toString();
     let userB = to.toString();
 
     if (userA > userB) {
-      [userA, userB] = [userB, userA]; // hai ham nay doi cho nhau de de so sanh
+      [userA, userB] = [userB, userA];
     }
 
-    //promise de chay dongthoi ca hai truy van vi cai mot khong phai doi cai hai
     const [alreadyFriends, existingRequest] = await Promise.all([
       Friend.findOne({ userA, userB }),
       FriendRequest.findOne({
         $or: [
-          { from, to },//{ from, to } là viết tắt của { from: from, to: to }
+          { from, to },
           { from: to, to: from },
         ],
       }),
     ]);
 
     if (alreadyFriends) {
-      return res.status(400).json({ message: "Hai người đã là bạn bè" });
+      return res.status(400).json({ message: "既にフレンドです" });
     }
 
     if (existingRequest) {
-      return res.status(400).json({ message: "Đã có lời mời kết bạn đang chờ" });
+      return res.status(400).json({ message: "フレンドリクエストが既に送信済みです" });
     }
 
-    const request = await FriendRequest.create({
-      from,
-      to,
-      message,
+    const request = await FriendRequest.create({ from, to, message });
+
+    const sender = await User.findById(from).select("_id displayName avatarUrl username").lean();
+    io.to(to.toString()).emit("new-friend-request", {
+      _id: request._id,
+      from: sender,
+      message: request.message,
+      createdAt: request.createdAt,
+      updatedAt: request.updatedAt,
     });
 
     return res
       .status(201)
-      .json({ message: "Gửi lời mời kết bạn thành công", request });
+      .json({ message: "フレンドリクエストを送信しました", request });
   } catch (error) {
-    console.error("Lỗi khi gửi yêu cầu kết bạn", error);
-    return res.status(500).json({ message: "Lỗi hệ thống" });
+    console.error("sendFriendRequest error:", error);
+    return res.status(500).json({ message: "システムエラーが発生しました" });
   }
 };
-
-// ham chap nhan loi moi ket ban
 
 export const acceptFriendRequest = async (req, res) => {
   try {
     const { requestId } = req.params;
     const userId = req.user._id;
 
-    const request = await FriendRequest.findById(requestId);// cai request id nay la  lay tu param de so sanh voi database
+    const request = await FriendRequest.findById(requestId);
 
     if (!request) {
-      return res.status(404).json({ message: "Không tìm thấy lời mời kết bạn" });
+      return res.status(404).json({ message: "フレンドリクエストが見つかりません" });
     }
-//neu nguoi nhan loi moi ket ban ma khac voi nguoi dang nhap thi khong co quen dong y
+
     if (request.to.toString() !== userId.toString()) {
       return res
         .status(403)
-        .json({ message: "Bạn không có quyền chấp nhận lời mời này" });
+        .json({ message: "このリクエストを承認する権限がありません" });
     }
-// dong nay de tao ban be moi 
+
     const friend = await Friend.create({
       userA: request.from,
       userB: request.to,
     });
 
-    // xoa loi moi ket ban sau khi da chap nhan
     await FriendRequest.findByIdAndDelete(requestId);
 
-    //lay thong tin nguoi gui de tra ve cho nguoi nhan biet
     const from = await User.findById(request.from)
       .select("_id displayName avatarUrl")
       .lean();
 
     return res.status(200).json({
-      message: "Chấp nhận lời mời kết bạn thành công",
+      message: "フレンドリクエストを承認しました",
       newFriend: {
         _id: from?._id,
         displayName: from?.displayName,
@@ -104,12 +102,11 @@ export const acceptFriendRequest = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Lỗi khi chấp nhận lời mời kết bạn", error);
-    return res.status(500).json({ message: "Lỗi hệ thống" });
+    console.error("acceptFriendRequest error:", error);
+    return res.status(500).json({ message: "システムエラーが発生しました" });
   }
 };
 
-// ham tu choi loi moi ket ban 
 export const declineFriendRequest = async (req, res) => {
   try {
     const { requestId } = req.params;
@@ -118,42 +115,34 @@ export const declineFriendRequest = async (req, res) => {
     const request = await FriendRequest.findById(requestId);
 
     if (!request) {
-      return res.status(404).json({ message: "Không tìm thấy lời mời kết bạn" });
+      return res.status(404).json({ message: "フレンドリクエストが見つかりません" });
     }
 
     if (request.to.toString() !== userId.toString()) {
       return res
         .status(403)
-        .json({ message: "Bạn không có quyền từ chối lời mời này" });
+        .json({ message: "このリクエストを拒否する権限がありません" });
     }
 
     await FriendRequest.findByIdAndDelete(requestId);
 
     return res.sendStatus(204);
   } catch (error) {
-    console.error("Lỗi khi từ chối lời mời kết bạn", error);
-    return res.status(500).json({ message: "Lỗi hệ thống" });
+    console.error("declineFriendRequest error:", error);
+    return res.status(500).json({ message: "システムエラーが発生しました" });
   }
 };
 
-// ham lay dnah sach ban be 
 export const getAllFriends = async (req, res) => {
   try {
     const userId = req.user._id;
 
     const friendships = await Friend.find({
-      $or: [
-        {
-          userA: userId,
-        },
-        {
-          userB: userId,
-        },
-      ],
+      $or: [{ userA: userId }, { userB: userId }],
     })
-      .populate("userA", "_id displayName avatarUrl username") // populate la de lay thong tin nguoi dung
+      .populate("userA", "_id displayName avatarUrl username")
       .populate("userB", "_id displayName avatarUrl username")
-      .lean(); //lean de tra ve di tuong thuong thay vi mongoose DB object
+      .lean();
 
     if (!friendships.length) {
       return res.status(200).json({ friends: [] });
@@ -165,12 +154,11 @@ export const getAllFriends = async (req, res) => {
 
     return res.status(200).json({ friends });
   } catch (error) {
-    console.error("Lỗi khi lấy danh sách bạn bè", error);
-    return res.status(500).json({ message: "Lỗi hệ thống" });
+    console.error("getAllFriends error:", error);
+    return res.status(500).json({ message: "システムエラーが発生しました" });
   }
 };
 
-// ham lay danh sach loi moi ket ban va nguoi gui
 export const getFriendRequests = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -182,12 +170,9 @@ export const getFriendRequests = async (req, res) => {
       FriendRequest.find({ to: userId }).populate("from", populateFields),
     ]);
 
-    //sent: danh sách bạn gửi
-
-//received: danh sách bạn nhận
     res.status(200).json({ sent, received });
   } catch (error) {
-    console.error("Lỗi khi lấy danh sách yêu cầu kết bạn", error);
-    return res.status(500).json({ message: "Lỗi hệ thống" });
+    console.error("getFriendRequests error:", error);
+    return res.status(500).json({ message: "システムエラーが発生しました" });
   }
 };

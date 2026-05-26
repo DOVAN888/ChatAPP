@@ -16,7 +16,7 @@ export const createConversation = async (req, res) => {
     ) {
       return res
         .status(400)
-        .json({ message: "Tên nhóm và danh sách thành viên là bắt buộc" });
+        .json({ message: "グループ名とメンバーリストは必須です" });
     }
 
     let conversation;
@@ -55,15 +55,12 @@ export const createConversation = async (req, res) => {
     }
 
     if (!conversation) {
-      return res.status(400).json({ message: "Conversation type không hợp lệ" });
+      return res.status(400).json({ message: "無効な会話タイプです" });
     }
 
     await conversation.populate([
       { path: "participants.userId", select: "displayName avatarUrl" },
-      {
-        path: "seenBy",
-        select: "displayName avatarUrl",
-      },
+      { path: "seenBy", select: "displayName avatarUrl" },
       { path: "lastMessage.senderId", select: "displayName avatarUrl" },
     ]);
 
@@ -84,8 +81,8 @@ export const createConversation = async (req, res) => {
 
     return res.status(201).json({ conversation: formatted });
   } catch (error) {
-    console.error("Lỗi khi tạo conversation", error);
-    return res.status(500).json({ message: "Lỗi hệ thống" });
+    console.error("createConversation error:", error);
+    return res.status(500).json({ message: "システムエラーが発生しました" });
   }
 };
 
@@ -96,18 +93,9 @@ export const getConversations = async (req, res) => {
       "participants.userId": userId,
     })
       .sort({ lastMessageAt: -1, updatedAt: -1 })
-      .populate({
-        path: "participants.userId",
-        select: "displayName avatarUrl",
-      })
-      .populate({
-        path: "lastMessage.senderId",
-        select: "displayName avatarUrl",
-      })
-      .populate({
-        path: "seenBy",
-        select: "displayName avatarUrl",
-      });
+      .populate({ path: "participants.userId", select: "displayName avatarUrl" })
+      .populate({ path: "lastMessage.senderId", select: "displayName avatarUrl" })
+      .populate({ path: "seenBy", select: "displayName avatarUrl" });
 
     const formatted = conversations.map((convo) => {
       const participants = (convo.participants || []).map((p) => ({
@@ -126,8 +114,8 @@ export const getConversations = async (req, res) => {
 
     return res.status(200).json({ conversations: formatted });
   } catch (error) {
-    console.error("Lỗi xảy ra khi lấy conversations", error);
-    return res.status(500).json({ message: "Lỗi hệ thống" });
+    console.error("getConversations error:", error);
+    return res.status(500).json({ message: "システムエラーが発生しました" });
   }
 };
 
@@ -156,13 +144,10 @@ export const getMessages = async (req, res) => {
 
     messages = messages.reverse();
 
-    return res.status(200).json({
-      messages,
-      nextCursor,
-    });
+    return res.status(200).json({ messages, nextCursor });
   } catch (error) {
-    console.error("Lỗi xảy ra khi lấy messages", error);
-    return res.status(500).json({ message: "Lỗi hệ thống" });
+    console.error("getMessages error:", error);
+    return res.status(500).json({ message: "システムエラーが発生しました" });
   }
 };
 
@@ -175,7 +160,7 @@ export const getUserConversationsForSocketIO = async (userId) => {
 
     return conversations.map((c) => c._id.toString());
   } catch (error) {
-    console.error("Lỗi khi fetch conversations: ", error);
+    console.error("getUserConversationsForSocketIO error:", error);
     return [];
   }
 };
@@ -188,17 +173,17 @@ export const markAsSeen = async (req, res) => {
     const conversation = await Conversation.findById(conversationId).lean();
 
     if (!conversation) {
-      return res.status(404).json({ message: "Conversation không tồn tại" });
+      return res.status(404).json({ message: "会話が見つかりません" });
     }
 
     const last = conversation.lastMessage;
 
     if (!last) {
-      return res.status(200).json({ message: "Không có tin nhắn để mark as seen" });
+      return res.status(200).json({ message: "既読にするメッセージがありません" });
     }
 
     if (last.senderId.toString() === userId) {
-      return res.status(200).json({ message: "Sender không cần mark as seen" });
+      return res.status(200).json({ message: "送信者は既読処理不要です" });
     }
 
     const updated = await Conversation.findByIdAndUpdate(
@@ -207,9 +192,7 @@ export const markAsSeen = async (req, res) => {
         $addToSet: { seenBy: userId },
         $set: { [`unreadCounts.${userId}`]: 0 },
       },
-      {
-        new: true,
-      }
+      { new: true }
     );
 
     io.to(conversationId).emit("read-message", {
@@ -225,12 +208,12 @@ export const markAsSeen = async (req, res) => {
     });
 
     return res.status(200).json({
-      message: "Marked as seen",
-      seenBy: updated?.sennBy || [],
+      message: "既読にしました",
+      seenBy: updated?.seenBy || [],
       myUnreadCount: updated?.unreadCounts[userId] || 0,
     });
   } catch (error) {
-    console.error("Lỗi khi mark as seen", error);
-    return res.status(500).json({ message: "Lỗi hệ thống" });
+    console.error("markAsSeen error:", error);
+    return res.status(500).json({ message: "システムエラーが発生しました" });
   }
 };

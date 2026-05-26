@@ -1,28 +1,26 @@
 import Conversation from "../models/Conversation.js";
 import Friend from "../models/Friend.js";
 
-const pair = (a, b) => (a < b ? [a, b] : [b, a]);// dong nay de sap xep hai id de de so sanh 
+const pair = (a, b) => (a < b ? [a, b] : [b, a]);
 
-// middleware kiem tra tinh ban be giua nguoi dung hien tai neu chua la ban be thi ko the gui tin 
 export const checkFriendship = async (req, res, next) => {
   try {
     const me = req.user._id.toString();
-    const recipientId = req.body?.recipientId ?? null;// dong nay de lay recipientId la id nguoi nhan 
+    const recipientId = req.body?.recipientId ?? null;
     const memberIds = req.body?.memberIds ?? [];
 
     if (!recipientId && memberIds.length === 0) {
       return res
         .status(400)
-        .json({ message: "Cần cung cấp recipientId hoặc memberIds" });
+        .json({ message: "recipientIdまたはmemberIdsを指定してください" });
     }
 
     if (recipientId) {
       const [userA, userB] = pair(me, recipientId);
-
       const isFriend = await Friend.findOne({ userA, userB });
 
       if (!isFriend) {
-        return res.status(403).json({ message: "Bạn chưa kết bạn với người này" });
+        return res.status(403).json({ message: "このユーザーとはフレンドではありません" });
       }
 
       return next();
@@ -40,13 +38,13 @@ export const checkFriendship = async (req, res, next) => {
     if (notFriends.length > 0) {
       return res
         .status(403)
-        .json({ message: "Bạn chỉ có thể thêm bạn bè vào nhóm.", notFriends });
+        .json({ message: "グループに追加できるのはフレンドのみです", notFriends });
     }
 
     next();
   } catch (error) {
-    console.error("Lỗi xảy ra khi checkFriendship:", error);
-    return res.status(500).json({ message: "Lỗi hệ thống" });
+    console.error("checkFriendship error:", error);
+    return res.status(500).json({ message: "システムエラーが発生しました" });
   }
 };
 
@@ -58,7 +56,7 @@ export const checkGroupMembership = async (req, res, next) => {
     const conversation = await Conversation.findById(conversationId);
 
     if (!conversation) {
-      return res.status(404).json({ message: "Không tìm thấy cuộc trò chuyện" });
+      return res.status(404).json({ message: "会話が見つかりません" });
     }
 
     const isMember = conversation.participants.some(
@@ -66,14 +64,13 @@ export const checkGroupMembership = async (req, res, next) => {
     );
 
     if (!isMember) {
-      return res.status(403).json({ message: "Bạn không ở trong group này." });
+      return res.status(403).json({ message: "このグループのメンバーではありません" });
     }
 
     req.conversation = conversation;
-
     next();
   } catch (error) {
-    console.error("Lỗi checkGroupMembership:", error);
-    return res.status(500).json({ message: "Lỗi hệ thống" });
+    console.error("checkGroupMembership error:", error);
+    return res.status(500).json({ message: "システムエラーが発生しました" });
   }
 };

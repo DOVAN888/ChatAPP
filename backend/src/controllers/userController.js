@@ -1,16 +1,31 @@
 import { uploadImageFromBuffer } from "../middlewares/uploadMiddleware.js";
 import User from "../models/User.js";
 
+export const updateProfile = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { displayName, bio, phone } = req.body;
+
+    const updated = await User.findByIdAndUpdate(
+      userId,
+      { displayName, bio, phone },
+      { new: true, runValidators: true }
+    ).select("-hashedPassword -avatarId");
+
+    return res.status(200).json({ user: updated });
+  } catch (error) {
+    console.error("updateProfile error:", error);
+    return res.status(500).json({ message: "システムエラーが発生しました" });
+  }
+};
+
 export const authMe = async (req, res) => {
   try {
-    const user = req.user; // lấy từ authMiddleware
-
-    return res.status(200).json({
-      user,
-    });
+    const user = req.user;
+    return res.status(200).json({ user });
   } catch (error) {
-    console.error("Lỗi khi gọi authMe", error);
-    return res.status(500).json({ message: "Lỗi hệ thống" });
+    console.error("authMe error:", error);
+    return res.status(500).json({ message: "システムエラーが発生しました" });
   }
 };
 
@@ -19,7 +34,7 @@ export const searchUserByUsername = async (req, res) => {
     const { username } = req.query;
 
     if (!username || username.trim() === "") {
-      return res.status(400).json({ message: "Cần cung cấp username trong query." });
+      return res.status(400).json({ message: "クエリにusernameを指定してください" });
     }
 
     const user = await User.findOne({ username }).select(
@@ -28,8 +43,8 @@ export const searchUserByUsername = async (req, res) => {
 
     return res.status(200).json({ user });
   } catch (error) {
-    console.error("Lỗi xảy ra khi searchUserByUsername", error);
-    return res.status(500).json({ message: "Lỗi hệ thống" });
+    console.error("searchUserByUsername error:", error);
+    return res.status(500).json({ message: "システムエラーが発生しました" });
   }
 };
 
@@ -39,7 +54,7 @@ export const uploadAvatar = async (req, res) => {
     const userId = req.user._id;
 
     if (!file) {
-      return res.status(400).json({ message: "No file uploaded" });
+      return res.status(400).json({ message: "ファイルがアップロードされていません" });
     }
 
     const result = await uploadImageFromBuffer(file.buffer);
@@ -50,18 +65,16 @@ export const uploadAvatar = async (req, res) => {
         avatarUrl: result.secure_url,
         avatarId: result.public_id,
       },
-      {
-        new: true,
-      }
+      { new: true }
     ).select("avatarUrl");
 
     if (!updatedUser.avatarUrl) {
-      return res.status(400).json({ message: "Avatar trả về null" });
+      return res.status(400).json({ message: "アバターの取得に失敗しました" });
     }
 
     return res.status(200).json({ avatarUrl: updatedUser.avatarUrl });
   } catch (error) {
-    console.error("Lỗi xảy ra khi upload avatar", error);
-    return res.status(500).json({ message: "Upload failed" });
+    console.error("uploadAvatar error:", error);
+    return res.status(500).json({ message: "アップロードに失敗しました" });
   }
 };

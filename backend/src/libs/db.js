@@ -4,9 +4,9 @@ export const connectDB = async () => {
   try {
     // @ts-ignore
     await mongoose.connect(process.env.MONGODB_CONNECTIONSTRING);
-    console.log("Liên kết CSDL thành công!");
+    console.log("データベース接続に成功しました");
   } catch (error) {
-    console.log("Lỗi khi kết nối CSDL:", error);
+    console.log("データベース接続エラー:", error);
     process.exit(1);
   }
 };

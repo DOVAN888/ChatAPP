@@ -48,6 +48,6 @@ app.use("/api/conversations", conversationRoute);
 
 connectDB().then(() => {
   server.listen(PORT, () => {
-    console.log(`server bắt đầu trên cổng ${PORT}`);
+    console.log(`サーバーがポート ${PORT} で起動しました`);
   });
 });

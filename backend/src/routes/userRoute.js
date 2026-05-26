@@ -3,6 +3,7 @@ import {
   authMe,
   searchUserByUsername,
   uploadAvatar,
+  updateProfile,
 } from "../controllers/userController.js";
 import { upload } from "../middlewares/uploadMiddleware.js";
 
@@ -10,6 +11,7 @@ const router = express.Router();
 
 router.get("/me", authMe);
 router.get("/search", searchUserByUsername);
+router.put("/me", updateProfile);
 router.post("/uploadAvatar", upload.single("file"), uploadAvatar);
 
 export default router;

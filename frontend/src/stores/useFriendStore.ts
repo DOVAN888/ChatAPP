@@ -88,4 +88,9 @@ export const useFriendStore = create<FriendState>((set, get) => ({
       set({ loading: false });
     }
   },
+  addReceivedRequest: (request) => {
+    set((state) => ({
+      receivedList: [request, ...state.receivedList],
+    }));
+  },
 }));

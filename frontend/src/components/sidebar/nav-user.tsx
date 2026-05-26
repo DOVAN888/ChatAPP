@@ -1,4 +1,6 @@
 import { Bell, ChevronsUpDown, UserIcon } from "lucide-react";
+import { useEffect } from "react";
+import { useFriendStore } from "@/stores/useFriendStore";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -26,6 +28,12 @@ export function NavUser({ user }: { user: User }) {
   const { isMobile } = useSidebar();
   const [friendRequestOpen, setfriendRequestOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const { receivedList, getAllFriendRequests } = useFriendStore();
+  const notifCount = receivedList.length;
+
+  useEffect(() => {
+    getAllFriendRequests();
+  }, []);
 
   return (
     <>
@@ -85,6 +93,11 @@ export function NavUser({ user }: { user: User }) {
                 <DropdownMenuItem onClick={() => setfriendRequestOpen(true)}>
                   <Bell className="text-muted-foreground dark:group-focus:!text-accent-foreground" />
                   通知
+                  {notifCount > 0 && (
+                    <span className="ml-auto flex size-5 items-center justify-center rounded-full bg-red-500 text-[11px] font-bold text-white">
+                      {notifCount}
+                    </span>
+                  )}
                 </DropdownMenuItem>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />

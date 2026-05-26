@@ -31,12 +31,10 @@ export const useAuthStore = create<AuthState>()(
           //  gọi api
           await authService.signUp(username, password, email, firstName, lastName);
 
-          toast.success(
-            "Đăng ký thành công! Bạn sẽ được chuyển sang trang đăng nhập."
-          );
+          toast.success("登録が完了しました！ログインページに移動します。");
         } catch (error) {
           console.error(error);
-          toast.error("Đăng ký không thành công");
+          toast.error("登録に失敗しました");
         } finally {
           set({ loading: false });
         }
@@ -52,10 +50,10 @@ export const useAuthStore = create<AuthState>()(
           await get().fetchMe();
           useChatStore.getState().fetchConversations();
 
-          toast.success("Chào mừng bạn quay lại với Moji 🎉");
+          toast.success("Mojiへようこそ！");
         } catch (error) {
           console.error(error);
-          toast.error("Đăng nhập không thành công!");
+          toast.error("ログインに失敗しました");
         } finally {
           set({ loading: false });
         }
@@ -64,10 +62,10 @@ export const useAuthStore = create<AuthState>()(
         try {
           get().clearState();
           await authService.signOut();
-          toast.success("Logout thành công!");
+          toast.success("ログアウトしました");
         } catch (error) {
           console.error(error);
-          toast.error("Lỗi xảy ra khi logout. Hãy thử lại!");
+          toast.error("ログアウト中にエラーが発生しました。もう一度お試しください");
         }
       },
       fetchMe: async () => {
@@ -79,7 +77,7 @@ export const useAuthStore = create<AuthState>()(
         } catch (error) {
           console.error(error);
           set({ user: null, accessToken: null });
-          toast.error("Lỗi xảy ra khi lấy dữ liệu người dùng. Hãy thử lại!");
+          toast.error("ユーザー情報の取得中にエラーが発生しました");
         } finally {
           set({ loading: false });
         }
@@ -97,7 +95,7 @@ export const useAuthStore = create<AuthState>()(
           }
         } catch (error) {
           console.error(error);
-          toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!");
+          toast.error("セッションの有効期限が切れました。再度ログインしてください");
           get().clearState();
         } finally {
           set({ loading: false });
